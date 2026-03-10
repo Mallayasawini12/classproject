@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help & Documentation - EmotiSense</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .faq-item {
+            background: white;
+            margin-bottom: 1rem;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--dark);
+            transition: all 0.3s ease;
+        }
+        .faq-question:hover {
+            background: var(--light);
+        }
+        .faq-question i {
+            transition: transform 0.3s ease;
+        }
+        .faq-question.active i {
+            transform: rotate(180deg);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.5rem;
+        }
+        .faq-answer.active {
+            max-height: 500px;
+            padding: 0 1.5rem 1.5rem;
+        }
+        .faq-answer p {
+            color: var(--gray);
+            line-height: 1.8;
+        }
+        .guide-step {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+        }
+        .guide-step h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .api-endpoint {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid var(--primary);
+        }
+        .api-method {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+        }
+        .method-get {
+            background: #28a745;
+            color: white;
+        }
+        .method-post {
+            background: #ffc107;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <span>EmotiSense</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-video"></i>
+                    Live Feed
+                </a>
+                <a href="/dashboard" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    Analytics
+                </a>
+                <a href="/about" class="nav-link">
+                    <i class="fas fa-info-circle"></i>
+                    About
+                </a>
+                <a href="/help" class="nav-link active">
+                    <i class="fas fa-question-circle"></i>
+                    Help
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="hero-section">
+            <h1 class="hero-title">
+                Help & <span class="gradient-text">Documentation</span>
+            </h1>
+            <p class="hero-subtitle">
+                Everything you need to know about using EmotiSense
+            </p>
+        </div>
+
+        <div class="container">
+            <!-- Quick Start Guide -->
+            <section class="guide-section">
+                <h2 class="section-title">
+                    <i class="fas fa-rocket"></i>
+                    Quick Start Guide
+                </h2>
+                
+                <div class="guide-step">
+                    <h3><i class="fas fa-step-forward"></i> Step 1: Allow Camera Access</h3>
+                    <p>When you first visit the Live Feed page, your browser will ask for permission to access your camera. Click "Allow" to enable emotion detection.</p>
+                </div>
+
+                <div class="guide-step">
+                    <h3><i class="fas fa-camera"></i> Step 2: Position Yourself</h3>
+                    <p>Make sure your face is clearly visible and well-lit. The system works best when your face is centered within the camera view.</p>
+                </div>
+
+                <div class="guide-step">
+                    <h3><i class="fas fa-brain"></i> Step 3: Watch the Detection</h3>
+                    <p>The system will automatically detect your facial expressions and display the dominant emotion in real-time on the video feed.</p>
+                </div>
+
+                <div class="guide-step">
+                    <h3><i class="fas fa-chart-bar"></i> Step 4: View Analytics</h3>
+                    <p>Click "View Analytics Dashboard" to see detailed statistics, charts, and emotion breakdowns with percentages.</p>
+                </div>
+
+                <div class="guide-step">
+                    <h3><i class="fas fa-download"></i> Step 5: Export Data</h3>
+                    <p>From the dashboard, you can export your emotion data in CSV or JSON format for further analysis.</p>
+                </div>
+            </section>
+
+            <!-- FAQ Section -->
+            <section class="faq-section">
+                <h2 class="section-title">
+                    <i class="fas fa-question-circle"></i>
+                    Frequently Asked Questions
+                </h2>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>What emotions can EmotiSense detect?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>EmotiSense can detect 7 different emotions: Happy, Cry (Sad), Angry, Surprise, Fear, Disgust, and Neutral. Each emotion is analyzed based on facial features and expressions.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>How accurate is the emotion detection?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>EmotiSense uses state-of-the-art deep learning models (DeepFace) which achieve high accuracy rates (typically 90-98%). Accuracy depends on lighting conditions, face visibility, and expression clarity.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Is my video data stored or shared?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>No, EmotiSense processes all video data locally in your browser and on the server in real-time. No video recordings are saved, and only emotion statistics are temporarily stored during your session.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Can I use EmotiSense on mobile devices?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! EmotiSense is fully responsive and works on mobile devices, tablets, and desktops. Make sure your device has a front-facing camera and grant camera permissions in your browser.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>How do I reset the statistics?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>On the Analytics Dashboard, click the "Reset Statistics" button to clear all emotion data and start a new session. You can also use the API endpoint /api/reset with a POST request.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>What file formats can I export data to?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>You can export your emotion data in two formats: CSV (for spreadsheet applications like Excel) and JSON (for programmatic access and data analysis tools).</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Why is "No face detected" showing?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>This message appears when the system cannot detect a face in the video frame. Ensure you're in a well-lit area, facing the camera directly, and that your entire face is visible within the frame.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <span>Can multiple people use EmotiSense simultaneously?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Currently, EmotiSense is optimized for single-user detection. While multiple faces may be detected, the system focuses on the most prominent face in the video frame.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Documentation -->
+            <section class="api-section">
+                <h2 class="section-title">
+                    <i class="fas fa-code"></i>
+                    API Documentation
+                </h2>
+
+                <div class="chart-card">
+                    <h3>Available API Endpoints</h3>
+                    
+                    <div class="api-endpoint">
+                        <span class="api-method method-get">GET</span>
+                        <strong>/api/emotions</strong>
+                        <p style="margin-top: 0.5rem; color: #6c757d;">Get current emotion statistics and session information</p>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <span class="api-method method-get">GET</span>
+                        <strong>/api/history</strong>
+                        <p style="margin-top: 0.5rem; color: #6c757d;">Retrieve emotion history with timestamps (last 50 entries)</p>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <span class="api-method method-post">POST</span>
+                        <strong>/api/reset</strong>
+                        <p style="margin-top: 0.5rem; color: #6c757d;">Reset all emotion statistics and start a new session</p>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <span class="api-method method-get">GET</span>
+                        <strong>/api/export/json</strong>
+                        <p style="margin-top: 0.5rem; color: #6c757d;">Download emotion data as JSON file</p>
+                    </div>
+
+                    <div class="api-endpoint">
+                        <span class="api-method method-get">GET</span>
+                        <strong>/api/export/csv</strong>
+                        <p style="margin-top: 0.5rem; color: #6c757d;">Download emotion data as CSV file</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section class="troubleshooting-section">
+                <h2 class="section-title">
+                    <i class="fas fa-wrench"></i>
+                    Troubleshooting
+                </h2>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <i class="fas fa-video-slash icon-purple"></i>
+                        <h3>Camera Not Working</h3>
+                        <p>Check browser permissions, ensure no other application is using the camera, and try refreshing the page.</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-exclamation-triangle icon-yellow"></i>
+                        <h3>Low Accuracy</h3>
+                        <p>Improve lighting conditions, ensure your face is fully visible, and avoid extreme angles or distances.</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-sync-alt icon-green"></i>
+                        <h3>Page Not Loading</h3>
+                        <p>Clear browser cache, check internet connection, and ensure the server is running properly.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Support -->
+            <section class="support-section">
+                <div class="chart-card" style="text-align: center;">
+                    <i class="fas fa-headset" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                    <h2>Need More Help?</h2>
+                    <p style="color: var(--gray); margin-bottom: 2rem;">Can't find what you're looking for? We're here to help!</p>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="mailto:support@emotisense.com" class="btn btn-primary">
+                            <i class="fas fa-envelope"></i>
+                            Email Support
+                        </a>
+                        <a href="/about" class="btn" style="background: white; color: var(--primary); border: 2px solid var(--primary);">
+                            <i class="fas fa-info-circle"></i>
+                            Learn More
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Back Button -->
+            <div class="action-section">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Live Feed
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 EmotiSense. Powered by AI & Deep Learning</p>
+    </footer>
+
+    <script>
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling;
+            const isActive = answer.classList.contains('active');
+            
+            // Close all FAQ items
+            document.querySelectorAll('.faq-answer').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.faq-question').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Open clicked item if it wasn't active
+            if (!isActive) {
+                answer.classList.add('active');
+                element.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

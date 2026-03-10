@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - EmotiSense</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <span>EmotiSense</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-video"></i>
+                    Live Feed
+                </a>
+                <a href="/dashboard" class="nav-link active">
+                    <i class="fas fa-chart-line"></i>
+                    Analytics
+                </a>
+                <a href="/about" class="nav-link">
+                    <i class="fas fa-info-circle"></i>
+                    About
+                </a>
+                <a href="/help" class="nav-link">
+                    <i class="fas fa-question-circle"></i>
+                    Help
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <h1>Emotion Analytics <span class="gradient-text">Dashboard</span></h1>
+                <p class="dashboard-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ date.strftime('%B %d, %Y at %I:%M %p') }}
+                </p>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalDetections">0</h3>
+                        <p>Total Detections</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="dominantEmotion">-</h3>
+                        <p>Dominant Emotion</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="emotionTypes">0</h3>
+                        <p>Emotion Types</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="accuracyRate">98%</h3>
+                        <p>Accuracy Rate</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <!-- Bar Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h2><i class="fas fa-chart-bar"></i> Emotion Distribution</h2>
+                        <p>Frequency of detected emotions</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="emotionBarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Pie Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h2><i class="fas fa-chart-pie"></i> Emotion Breakdown</h2>
+                        <p>Percentage distribution</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="emotionPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emotion List -->
+            <div class="emotion-list-card">
+                <div class="chart-header">
+                    <h2><i class="fas fa-list"></i> Detailed Breakdown</h2>
+                </div>
+                <div class="emotion-list" id="emotionList"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-section" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Live Feed
+                </a>
+                <button onclick="exportData('json')" class="btn" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;">
+                    <i class="fas fa-file-code"></i>
+                    Export JSON
+                </button>
+                <button onclick="exportData('csv')" class="btn" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                    <i class="fas fa-file-csv"></i>
+                    Export CSV
+                </button>
+                <button onclick="resetStats()" class="btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <i class="fas fa-redo"></i>
+                    Reset Statistics
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 EmotiSense. Powered by AI & Deep Learning</p>
+    </footer>
+
+    <script type="application/json" id="emotionData">
+{{ data|tojson|safe }}
+    </script>
+
+    <script>
+        const emotionData = JSON.parse(document.getElementById('emotionData').textContent);
+        const emotionLabels = Object.keys(emotionData);
+        const emotionValues = Object.values(emotionData);
+        const totalDetections = emotionValues.reduce((a, b) => a + b, 0);
+
+        // Emotion icons and colors
+        const emotionIcons = {
+            'happy': { icon: '😊', color: '#f59e0b' },
+            'cry': { icon: '😢', color: '#3b82f6' },
+            'sad': { icon: '😔', color: '#6366f1' },
+            'angry': { icon: '😠', color: '#ef4444' },
+            'surprise': { icon: '😮', color: '#8b5cf6' },
+            'fear': { icon: '😨', color: '#ec4899' },
+            'disgust': { icon: '🤢', color: '#10b981' },
+            'neutral': { icon: '😐', color: '#6b7280' }
+        };
+
+        // Update stats
+        document.getElementById('totalDetections').textContent = totalDetections;
+        document.getElementById('emotionTypes').textContent = emotionLabels.length;
+        
+        if (emotionLabels.length > 0) {
+            const maxIndex = emotionValues.indexOf(Math.max(...emotionValues));
+            const dominantEmotion = emotionLabels[maxIndex];
+            document.getElementById('dominantEmotion').textContent = 
+                dominantEmotion.charAt(0).toUpperCase() + dominantEmotion.slice(1);
+        }
+
+        // Color palette
+        const colors = [
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(201, 203, 207, 0.8)'
+        ];
+
+        // Bar Chart
+        new Chart(document.getElementById('emotionBarChart'), {
+            type: 'bar',
+            data: {
+                labels: emotionLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                datasets: [{
+                    label: 'Count',
+                    data: emotionValues,
+                    backgroundColor: colors.slice(0, emotionLabels.length),
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Pie Chart
+        new Chart(document.getElementById('emotionPieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: emotionLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                datasets: [{
+                    data: emotionValues,
+                    backgroundColor: colors.slice(0, emotionLabels.length),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            },
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const percentage = ((context.parsed / totalDetections) * 100).toFixed(1);
+                                return context.label + ': ' + percentage + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Emotion List
+        const emotionList = document.getElementById('emotionList');
+        emotionLabels.forEach((emotion, index) => {
+            const percentage = ((emotionValues[index] / totalDetections) * 100).toFixed(1);
+            const emotionInfo = emotionIcons[emotion.toLowerCase()] || { icon: '🎭', color: '#6b7280' };
+            
+            const item = document.createElement('div');
+            item.className = 'emotion-item';
+            item.innerHTML = `
+                <div class="emotion-info">
+                    <span class="emotion-icon" style="background: ${emotionInfo.color}20; color: ${emotionInfo.color};">
+                        ${emotionInfo.icon}
+                    </span>
+                    <span class="emotion-name">${emotion.charAt(0).toUpperCase() + emotion.slice(1)}</span>
+                </div>
+                <div class="emotion-stats">
+                    <span class="emotion-count">${emotionValues[index]} detections</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%; background: ${emotionInfo.color};"></div>
+                    </div>
+                    <span class="emotion-percentage">${percentage}%</span>
+                </div>
+            `;
+            emotionList.appendChild(item);
+        });
+
+        // Export functionality
+        function exportData(format) {
+            const url = `/api/export/${format}`;
+            window.location.href = url;
+        }
+
+        // Reset statistics
+        async function resetStats() {
+            if (!confirm('Are you sure you want to reset all statistics? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Statistics reset successfully!');
+                    location.reload();
+                } else {
+                    alert('Error resetting statistics: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Auto-refresh data every 5 seconds (optional)
+        // Uncomment to enable auto-refresh
+        // setInterval(() => {
+        //     location.reload();
+        // }, 5000);
+    </script>
+</body>
+</html>

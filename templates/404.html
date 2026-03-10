@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | EmotiSense</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 200px);
+            text-align: center;
+            padding: 2rem;
+        }
+        .error-icon {
+            font-size: 8rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: bounce 2s infinite;
+            margin-bottom: 2rem;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+        .error-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .error-message {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .error-links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .error-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-xl);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <span>EmotiSense</span>
+            </div>
+            <nav class="nav">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-video"></i>
+                    Live Feed
+                </a>
+                <a href="/dashboard" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    Analytics
+                </a>
+                <a href="/about" class="nav-link">
+                    <i class="fas fa-info-circle"></i>
+                    About
+                </a>
+                <a href="/help" class="nav-link">
+                    <i class="fas fa-question-circle"></i>
+                    Help
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="error-container">
+            <div class="error-icon">
+                <i class="fas fa-sad-tear"></i>
+            </div>
+            
+            <div class="error-code">404</div>
+            
+            <h1 class="error-title">Oops! Page Not Found</h1>
+            
+            <p class="error-message">
+                The page you're looking for seems to have vanished into the digital void. 
+                Don't worry though, we can help you find your way back!
+            </p>
+            
+            <div class="error-card">
+                <h3 style="margin-bottom: 1.5rem; color: var(--dark);">
+                    <i class="fas fa-compass"></i> Where would you like to go?
+                </h3>
+                
+                <div class="error-links">
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-home"></i>
+                        Go Home
+                    </a>
+                    <a href="/dashboard" class="btn" style="background: white; color: var(--primary); border: 2px solid var(--primary);">
+                        <i class="fas fa-chart-line"></i>
+                        View Analytics
+                    </a>
+                    <a href="/about" class="btn" style="background: white; color: var(--primary); border: 2px solid var(--primary);">
+                        <i class="fas fa-info-circle"></i>
+                        Learn More
+                    </a>
+                    <a href="/help" class="btn" style="background: white; color: var(--primary); border: 2px solid var(--primary);">
+                        <i class="fas fa-question-circle"></i>
+                        Get Help
+                    </a>
+                </div>
+            </div>
+
+            <div style="margin-top: 3rem;">
+                <div class="info-grid" style="max-width: 900px; margin: 0 auto;">
+                    <div class="info-card">
+                        <i class="fas fa-lightbulb icon-yellow"></i>
+                        <h3>Quick Tip</h3>
+                        <p>Try using the navigation menu above to explore EmotiSense features</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-search icon-purple"></i>
+                        <h3>Lost?</h3>
+                        <p>Check the URL for typos or visit our Help page for guidance</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-headset icon-green"></i>
+                        <h3>Need Help?</h3>
+                        <p>Contact support if you believe this is an error</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 EmotiSense. Powered by AI & Deep Learning</p>
+    </footer>
+</body>
+</html>

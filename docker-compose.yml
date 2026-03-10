@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  emotisense:
+    build: .
+    container_name: emotisense_app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/app/logs
+    devices:
+      - /dev/video0:/dev/video0  # Give container access to webcam
+    privileged: true  # Required for camera access
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    networks:
+      - emotisense_network
+
+networks:
+  emotisense_network:
+    driver: bridge

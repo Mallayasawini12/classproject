@@ -1,0 +1,4 @@
+# Minimal requirements for Vercel (Still won't work due to webcam/ML requirements)
+# This is provided for reference only
+Flask==3.1.2
+Werkzeug==3.1.5
