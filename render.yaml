@@ -10,8 +10,5 @@ services:
         value: production
       - key: FLASK_HOST
         value: 0.0.0.0
-      - key: FLASK_PORT
-        value: 5000
       - key: PYTHONUNBUFFERED
         value: 1
-    dockerCommand: gunicorn --config gunicorn_config.py wsgi:app
