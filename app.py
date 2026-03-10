@@ -1,7 +1,7 @@
-from flask import Flask, render_template, Response, jsonify, send_file
+from flask import Flask, render_template, Response, jsonify, send_file, request
 import cv2
 from deepface import DeepFace
-from collections import Counter
+from collections import Counter, deque
 import threading
 import datetime
 import json
@@ -9,6 +9,9 @@ import csv
 import io
 import logging
 from pathlib import Path
+import base64
+import numpy as np
+import random
 
 # Configure logging
 logging.basicConfig(
@@ -24,10 +27,16 @@ emotion_counter = Counter()
 emotion_history = []  # Store history with timestamps
 lock = threading.Lock()
 session_start_time = datetime.datetime.now()
+session_notes = []  # Store user notes
+saved_snapshots = []  # Store captured snapshots
+emotion_intensity_history = deque(maxlen=100)  # Track emotion intensity
+current_frame = None  # Store current frame for snapshot
+sessions_archive = []  # Store past sessions for comparison
 
 camera = cv2.VideoCapture(0)
 
 def generate_frames():
+    global current_frame
     while True:
         success, frame = camera.read()
         if not success:
@@ -47,9 +56,14 @@ def generate_frames():
             # Map 'sad' to 'cry' for better user understanding
             display_emotion = 'cry' if emotion == 'sad' else emotion
             counter_emotion = 'cry' if emotion == 'sad' else emotion
+            
+            # Calculate emotion intensity (dominant emotion score)
+            emotion_intensity = max(emotion_scores.values())
 
             with lock:
+                current_frame = frame.copy()  # Store current frame for snapshots
                 emotion_counter[counter_emotion] += 1
+                
                 # Track history with timestamp (limit to last 100 entries)
                 emotion_history.append({
                     'emotion': counter_emotion,
@@ -58,6 +72,13 @@ def generate_frames():
                 })
                 if len(emotion_history) > 100:
                     emotion_history.pop(0)
+                
+                # Track emotion intensity
+                emotion_intensity_history.append({
+                    'timestamp': datetime.datetime.now().isoformat(),
+                    'emotion': counter_emotion,
+                    'intensity': emotion_intensity
+                })
 
             # Draw emotion and confidence
             cv2.putText(frame, f'Emotion: {display_emotion}', (30, 40),
@@ -230,6 +251,290 @@ def export_csv():
         download_name=filename
     )
 
+# NEW FEATURES
+
+@app.route('/api/recommendations')
+def api_recommendations():
+    """Get activity recommendations based on current emotion"""
+    with lock:
+        if not emotion_counter:
+            return jsonify({'message': 'No emotions detected yet'})
+        
+        dominant_emotion = emotion_counter.most_common(1)[0][0]
+    
+    # Emotion-based recommendations
+    recommendations = {
+        'happy': {
+            'activities': ['Share your joy with friends', 'Try something new', 'Help someone in need', 'Celebrate your success'],
+            'music': ['Upbeat pop', 'Dance music', 'Feel-good classics'],
+            'color': '#FFD700',
+            'message': 'You\'re feeling great! Keep spreading positivity!'
+        },
+        'cry': {
+            'activities': ['Talk to a friend', 'Watch a comfort movie', 'Practice self-care', 'Write in a journal'],
+            'music': ['Calm acoustic', 'Meditation music', 'Soft piano'],
+            'color': '#4682B4',
+            'message': 'It\'s okay to feel sad. Take care of yourself.'
+        },
+        'angry': {
+            'activities': ['Go for a walk', 'Try deep breathing', 'Exercise', 'Listen to calming music'],
+            'music': ['Calm instrumentals', 'Nature sounds', 'Meditation music'],
+            'color': '#FF4500',
+            'message': 'Take a moment to breathe and relax.'
+        },
+        'surprise': {
+            'activities': ['Embrace the moment', 'Share your excitement', 'Document the experience'],
+            'music': ['Exciting soundtracks', 'Energetic beats'],
+            'color': '#FF69B4',
+            'message': 'Life is full of surprises! Enjoy this moment!'
+        },
+        'fear': {
+            'activities': ['Practice relaxation', 'Talk to someone', 'Focus on breathing', 'Ground yourself'],
+            'music': ['Calming nature sounds', 'Slow tempo music', 'Guided meditation'],
+            'color': '#800080',
+            'message': 'You\'re safe. Take slow, deep breaths.'
+        },
+        'disgust': {
+            'activities': ['Change your environment', 'Practice mindfulness', 'Focus on positive things'],
+            'music': ['Uplifting music', 'Happy tunes'],
+            'color': '#228B22',
+            'message': 'Shift your focus to something pleasant.'
+        },
+        'neutral': {
+            'activities': ['Try something new', 'Connect with friends', 'Set a new goal', 'Learn something'],
+            'music': ['Your favorite genre', 'Discovery playlists'],
+            'color': '#808080',
+            'message': 'A calm state is perfect for new beginnings!'
+        }
+    }
+    
+    recommendation = recommendations.get(dominant_emotion, recommendations['neutral'])
+    recommendation['emotion'] = dominant_emotion
+    
+    return jsonify(recommendation)
+
+@app.route('/api/snapshot', methods=['POST'])
+def api_snapshot():
+    """Capture current frame as snapshot"""
+    global current_frame, saved_snapshots
+    
+    with lock:
+        if current_frame is None:
+            return jsonify({'success': False, 'message': 'No frame available'}), 400
+        
+        # Encode frame to base64
+        _, buffer = cv2.imencode('.jpg', current_frame)
+        img_base64 = base64.b64encode(buffer).decode('utf-8')
+        
+        # Get current emotion if available
+        current_emotion = emotion_counter.most_common(1)[0][0] if emotion_counter else 'unknown'
+        
+        snapshot_data = {
+            'id': len(saved_snapshots) + 1,
+            'timestamp': datetime.datetime.now().isoformat(),
+            'emotion': current_emotion,
+            'image': f'data:image/jpeg;base64,{img_base64}'
+        }
+        
+        saved_snapshots.append(snapshot_data)
+        
+        # Keep only last 20 snapshots
+        if len(saved_snapshots) > 20:
+            saved_snapshots.pop(0)
+    
+    return jsonify({
+        'success': True,
+        'message': 'Snapshot captured',
+        'snapshot': snapshot_data
+    })
+
+@app.route('/api/snapshots')
+def api_get_snapshots():
+    """Get all saved snapshots"""
+    with lock:
+        return jsonify({
+            'snapshots': saved_snapshots,
+            'count': len(saved_snapshots)
+        })
+
+@app.route('/api/notes', methods=['GET', 'POST', 'DELETE'])
+def api_notes():
+    """Manage session notes"""
+    global session_notes
+    
+    if request.method == 'POST':
+        data = request.get_json()
+        note_text = data.get('note', '')
+        
+        if not note_text:
+            return jsonify({'success': False, 'message': 'Note cannot be empty'}), 400
+        
+        with lock:
+            note = {
+                'id': len(session_notes) + 1,
+                'text': note_text,
+                'timestamp': datetime.datetime.now().isoformat(),
+                'emotion': emotion_counter.most_common(1)[0][0] if emotion_counter else 'neutral'
+            }
+            session_notes.append(note)
+        
+        return jsonify({'success': True, 'note': note})
+    
+    elif request.method == 'DELETE':
+        note_id = request.args.get('id', type=int)
+        with lock:
+            session_notes = [n for n in session_notes if n['id'] != note_id]
+        return jsonify({'success': True, 'message': 'Note deleted'})
+    
+    else:  # GET
+        with lock:
+            return jsonify({
+                'notes': session_notes,
+                'count': len(session_notes)
+            })
+
+@app.route('/api/intensity')
+def api_intensity():
+    """Get emotion intensity data"""
+    with lock:
+        intensity_data = list(emotion_intensity_history)
+        
+        # Calculate average intensity per emotion
+        emotion_avg_intensity = {}
+        for entry in intensity_data:
+            emotion = entry['emotion']
+            intensity = entry['intensity']
+            if emotion not in emotion_avg_intensity:
+                emotion_avg_intensity[emotion] = []
+            emotion_avg_intensity[emotion].append(intensity)
+        
+        # Calculate averages
+        for emotion in emotion_avg_intensity:
+            intensities = emotion_avg_intensity[emotion]
+            emotion_avg_intensity[emotion] = sum(intensities) / len(intensities)
+        
+        return jsonify({
+            'intensity_history': intensity_data[-50:],  # Last 50 entries
+            'average_intensity': emotion_avg_intensity,
+            'current_intensity': intensity_data[-1]['intensity'] if intensity_data else 0
+        })
+
+@app.route('/api/session/save', methods=['POST'])
+def api_save_session():
+    """Save current session for comparison"""
+    global sessions_archive
+    
+    with lock:
+        session_data = {
+            'id': len(sessions_archive) + 1,
+            'timestamp': datetime.datetime.now().isoformat(),
+            'start_time': session_start_time.isoformat(),
+            'duration': str(datetime.datetime.now() - session_start_time).split('.')[0],
+            'emotions': dict(emotion_counter),
+            'total_detections': sum(emotion_counter.values()),
+            'dominant_emotion': emotion_counter.most_common(1)[0][0] if emotion_counter else 'none',
+            'notes': session_notes.copy()
+        }
+        
+        sessions_archive.append(session_data)
+        
+        # Keep only last 10 sessions
+        if len(sessions_archive) > 10:
+            sessions_archive.pop(0)
+    
+    return jsonify({
+        'success': True,
+        'message': 'Session saved successfully',
+        'session': session_data
+    })
+
+@app.route('/api/sessions')
+def api_get_sessions():
+    """Get all saved sessions"""
+    with lock:
+        return jsonify({
+            'sessions': sessions_archive,
+            'count': len(sessions_archive)
+        })
+
+@app.route('/api/session/compare')
+def api_compare_sessions():
+    """Compare two sessions"""
+    session1_id = request.args.get('id1', type=int)
+    session2_id = request.args.get('id2', type=int)
+    
+    with lock:
+        session1 = next((s for s in sessions_archive if s['id'] == session1_id), None)
+        session2 = next((s for s in sessions_archive if s['id'] == session2_id), None)
+        
+        if not session1 or not session2:
+            return jsonify({'success': False, 'message': 'Session not found'}), 404
+        
+        comparison = {
+            'session1': session1,
+            'session2': session2,
+            'differences': {
+                'duration_diff': str(abs(
+                    datetime.datetime.fromisoformat(session1['duration']) - 
+                    datetime.datetime.fromisoformat(session2['duration'])
+                )) if 'T' not in session1['duration'] else 'N/A',
+                'detection_diff': session1['total_detections'] - session2['total_detections'],
+                'emotion_changes': {}
+            }
+        }
+        
+        # Compare emotions
+        all_emotions = set(list(session1['emotions'].keys()) + list(session2['emotions'].keys()))
+        for emotion in all_emotions:
+            count1 = session1['emotions'].get(emotion, 0)
+            count2 = session2['emotions'].get(emotion, 0)
+            comparison['differences']['emotion_changes'][emotion] = count1 - count2
+    
+    return jsonify(comparison)
+
+@app.route('/api/stats/advanced')
+def api_advanced_stats():
+    """Get advanced statistics"""
+    with lock:
+        if not emotion_counter:
+            return jsonify({'message': 'No data available'})
+        
+        total = sum(emotion_counter.values())
+        emotions = dict(emotion_counter)
+        
+        # Calculate percentages
+        percentages = {k: (v/total)*100 for k, v in emotions.items()}
+        
+        # Calculate emotion diversity (how varied the emotions are)
+        diversity_score = len(emotions) / 7 * 100  # 7 total emotions
+        
+        # Get emotion trends (increasing/decreasing)
+        trends = {}
+        if len(emotion_history) >= 10:
+            recent = emotion_history[-10:]
+            for emotion in emotions.keys():
+                recent_count = sum(1 for e in recent if e['emotion'] == emotion)
+                trends[emotion] = 'increasing' if recent_count > emotions[emotion]/total*10 else 'stable'
+        
+        # Calculate session quality score
+        positive_emotions = emotions.get('happy', 0) + emotions.get('surprise', 0)
+        negative_emotions = emotions.get('cry', 0) + emotions.get('angry', 0) + emotions.get('fear', 0)
+        quality_score = (positive_emotions / total * 100) if total > 0 else 50
+        
+        return jsonify({
+            'percentages': percentages,
+            'diversity_score': diversity_score,
+            'trends': trends,
+            'quality_score': quality_score,
+            'dominant_emotion': emotion_counter.most_common(1)[0][0],
+            'rare_emotions': emotion_counter.most_common()[:-4:-1],  # Least common
+            'emotion_balance': {
+                'positive': positive_emotions,
+                'negative': negative_emotions,
+                'neutral': emotions.get('neutral', 0)
+            }
+        })
+
 # Additional Pages
 @app.route('/about')
 def about():
@@ -240,6 +545,11 @@ def about():
 def help_page():
     """Help and documentation page"""
     return render_template('help.html')
+
+@app.route('/features')
+def features_page():
+    """Features showcase page"""
+    return render_template('features.html')
 
 # Error handlers
 @app.errorhandler(404)
